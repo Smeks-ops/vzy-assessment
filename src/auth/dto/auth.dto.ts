@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 
 export class CreateUserDto {
-  @ApiProperty({ example: 'soulcare@gmail.com' })
+  @ApiProperty({ example: 'vzy@gmail.com' })
   @IsEmail({}, { message: 'mismatch' })
   @IsNotEmpty({ message: 'isRequired' })
   email: string;
