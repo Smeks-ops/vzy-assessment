@@ -8,6 +8,8 @@ import { LoggerModule } from 'nestjs-pino';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { MiddlewareModule } from './middlewares/middleware.module';
+import { PaymentsModule } from './payments/payments.module';
+import { TransactionsModule } from './transactions/transactions.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { MiddlewareModule } from './middlewares/middleware.module';
     AuthModule,
     UsersModule,
     MiddlewareModule,
+    PaymentsModule,
+    TransactionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
