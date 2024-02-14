@@ -8,10 +8,11 @@ import { IRequest } from '@/helpers/auth.types';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { IUser } from '@/interfaces/user.interface';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel('User') private userModel: Model<IUser>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<IUser>) {}
 
   async updateUser(updateUserDto: UpdateUserDto, request: IRequest) {
     try {

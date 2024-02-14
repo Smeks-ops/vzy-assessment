@@ -1,3 +1,4 @@
+import { TransactionStatus } from '@/interfaces/payments.interface';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
@@ -18,8 +19,8 @@ export class User extends Document {
   @Prop({ required: true, default: true })
   active: boolean;
 
-  @Prop({ required: false })
-  status: string;
+  @Prop({ required: false, enum: TransactionStatus, type: String })
+  status: TransactionStatus;
 
   @Prop({ default: Date.now })
   createdAt: Date;

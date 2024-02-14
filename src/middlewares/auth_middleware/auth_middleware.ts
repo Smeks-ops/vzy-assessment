@@ -14,6 +14,7 @@ import { IUser } from '../../interfaces/user.interface';
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
   constructor(@InjectModel('User') private userModel: Model<IUser>) {}
+
   async use(req: IRequest, res: Response, next: NextFunction) {
     try {
       const accessToken = get(req, 'headers.authorization', '').replace(

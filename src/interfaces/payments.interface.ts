@@ -6,7 +6,7 @@ export enum TransactionStatus {
   FAILED = 'FAILED',
 }
 
-export interface ITransaction extends Document {
+export interface ITransactions extends Document {
   userId: string;
   amount: string;
   status: TransactionStatus;

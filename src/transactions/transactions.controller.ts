@@ -1,34 +1,73 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpException,
+  HttpStatus,
+  Req,
+} from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { UpdateTransactionDto } from './dto/update-transaction.dto';
-
-@Controller('transactions')
+import { TransactionStatus } from '@/interfaces/payments.interface';
+import Stripe from 'stripe';
+@Controller('webhook')
 export class TransactionsController {
-  constructor(private readonly transactionsService: TransactionsService) {}
-
-  @Post()
-  create(@Body() createTransactionDto: CreateTransactionDto) {
-    return this.transactionsService.create(createTransactionDto);
+  constructor(
+    private readonly transactionsService: TransactionsService,
+    private stripe: Stripe,
+  ) {
+    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2023-10-16',
+    });
   }
 
-  @Get()
-  findAll() {
-    return this.transactionsService.findAll();
-  }
+  @Post('stripe')
+  async handleStripeWebhook(@Body() body: any, @Req() request: Request) {
+    // verify stripe signature
+    const sig = request.headers['stripe-signature'];
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.transactionsService.findOne(+id);
-  }
+    let event;
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTransactionDto: UpdateTransactionDto) {
-    return this.transactionsService.update(+id, updateTransactionDto);
-  }
+    try {
+      if (!sig || !endpointSecret)
+        throw new Error('Missing necessary configuration.');
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.transactionsService.remove(+id);
+      event = this.stripe.webhooks.constructEvent(body, sig, endpointSecret);
+    } catch (err) {
+      console.log(`Webhook Error: ${err.message}`);
+      throw new HttpException(
+        'Webhook signature verification failed.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Handle event types
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        const paymentId = event.data.object.id; // payment intent id
+        await this.transactionsService.updateTransactionStatus(
+          paymentId,
+          TransactionStatus.PAID,
+        );
+        break;
+
+      case 'payment_intent.payment_failed':
+        await this.transactionsService.updateTransactionStatus(
+          paymentId,
+          TransactionStatus.FAILED,
+        );
+        break;
+
+      case 'payment_intent.pending':
+        await this.transactionsService.updateTransactionStatus(
+          paymentId,
+          TransactionStatus.PENDING,
+        );
+
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    return { received: true };
   }
 }
